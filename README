@@ -1,0 +1,10 @@
+# Spending Tracker App
+
+This application helps me keep track of my spending by analyzing my bank statement (an Itaú statement was used for this), categorizing transactions using AI, and providing insightful charts and statistics.
+
+## Technologies Used
+
+- **Backend**: Python, Flask
+- **Frontend**: Vanilla JS with Plotly.js for the charts
+- **AI**: Mistral
+- **Database**: SQLITE3

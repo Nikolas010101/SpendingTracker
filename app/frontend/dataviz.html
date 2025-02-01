@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Visualization</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <link rel="stylesheet" href="/styles.css" />
+    </head>
+    <body>
+        <h1>Transaction Data Visualization</h1>
+        <div class="controls">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate" />
+
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate" />
+
+            <label for="groupBy">Group By:</label>
+            <select id="groupBy">
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="trimester">Trimester</option>
+                <option value="year">Year</option>
+            </select>
+
+            <label for="transactionType">Transaction Type:</label>
+            <select id="transactionType">
+                <option value="both">Both</option>
+                <option value="credit">Credits</option>
+                <option value="debit">Debits</option>
+            </select>
+
+            <button id="refreshButton">Refresh</button>
+        </div>
+
+        <div class="chartRow">
+            <div class="chart" id="sumChart"></div>
+            <div class="chart" id="countChart"></div>
+        </div>
+        <div class="chartRow">
+            <div class="chart" id="sumPieChart"></div>
+            <div class="chart" id="countPieChart"></div>
+        </div>
+
+        <div class="link-container">
+            <a href="/">Home</a>
+            <a href="/history">View Data</a>
+            <a href="/admin">Admin</a>
+        </div>
+    </body>
+
+    <script src="/dataviz.js"></script>
+</html>

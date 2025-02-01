@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Upload .xls File</title>
+        <link rel="stylesheet" href="/styles.css" />
+    </head>
+    <body>
+        <h1>Upload .xls File</h1>
+        <form id="uploadForm">
+            <input
+                type="file"
+                id="fileInput"
+                name="file"
+                accept=".xls"
+                required
+            />
+            <br />
+            <button type="submit">Upload</button>
+        </form>
+
+        <div class="link-container">
+            <a href="/history">View Data</a>
+            <a href="/dataviz">Visualization</a>
+            <a href="/admin">Admin</a>
+        </div>
+
+        <script src="/index.js"></script>
+    </body>
+</html>

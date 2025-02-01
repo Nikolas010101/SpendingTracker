@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Admin Panel</title>
+        <link rel="stylesheet" href="/styles.css" />
+    </head>
+    <body>
+        <h1>Admin Panel</h1>
+
+        <div class="button-container">
+            <button id="deleteAll">Delete All Transactions</button>
+            <button id="categorizeTransactions">Categorize Transactions</button>
+        </div>
+
+        <div id="loadingBarContainer" style="display: none">
+            <progress id="loadingBar" value="0" max="100"></progress>
+            <span id="progressText">0%</span>
+        </div>
+
+        <div class="link-container">
+            <a href="/">Home</a>
+            <a href="/history">View Data</a>
+            <a href="/dataviz">Visualization</a>
+        </div>
+
+        <script src="/admin.js"></script>
+    </body>
+</html>
