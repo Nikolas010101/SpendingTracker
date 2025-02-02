@@ -149,6 +149,55 @@ def delete_all_transactions():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/admin/edit/<int:id>", methods=["POST"])
+def edit_transaction(id):
+    try:
+        data = request.get_json()
+        new_category = data.get("category")
+
+        if not new_category:
+            return jsonify({"error": "Category is required"}), 400
+
+        conn = sqlite3.connect("../db/tracker.db")
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "UPDATE transactions SET category = ? WHERE id = ?",
+            (new_category, id),
+        )
+
+        cursor.execute("SELECT * FROM transactions WHERE id = ?", (id,))
+        updated_row = cursor.fetchone()
+
+        conn.commit()
+        conn.close()
+
+        if updated_row:
+            columns = ["id", "date", "description", "category", "value"]
+            updated_row_dict = dict(zip(columns, updated_row))
+            return jsonify(updated_row_dict)
+        else:
+            return jsonify({"error": "Transaction not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/admin/delete/<int:id>", methods=["DELETE"])
+def delete_transaction(id):
+    try:
+        conn = sqlite3.connect("../db/tracker.db")
+        cursor = conn.cursor()
+
+        cursor.execute("DELETE FROM transactions WHERE id = ?", (id,))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({"message": "Transaction deleted successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/categorize-transactions", methods=["POST"])
 def categorize_transactions():
     global progress
@@ -191,7 +240,7 @@ def categorize_transactions():
         conn.commit()
         conn.close()
 
-        return jsonify({"message": f"Categorized {progress["current"]} transactions."})
+        return jsonify({"message": f"Categorized {progress['current']} transactions."})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
