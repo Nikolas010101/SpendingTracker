@@ -6,5 +6,5 @@ This application helps me keep track of my spending by analyzing my bank stateme
 
 - **Backend**: Python, Flask
 - **Frontend**: Vanilla JS with Plotly.js for the charts
-- **AI**: Mistral
+- **AI**: RandomForest (sklearn)
 - **Database**: SQLITE3

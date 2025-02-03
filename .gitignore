@@ -1,3 +1,4 @@
 /.DS_Store
 app/db
 app/backend/uploads
+app/backend/*.pkl

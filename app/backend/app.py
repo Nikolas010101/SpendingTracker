@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from pathlib import Path
 import pandas as pd
 import os
-import ollama
+import joblib
 import sqlite3
 
 app = Flask(__name__)
@@ -13,32 +14,39 @@ app.config["UPLOAD_FOLDER"] = "uploads"
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
+base_dir = Path(__file__).resolve().parent
+db_path = base_dir.parents[0] / "db" / "tracker.db"
+frontend_path = base_dir.parents[0] / "frontend"
+model_path = base_dir / "transaction_classifier.pkl"
+
+pipeline = joblib.load(model_path)
+
 progress = {"current": 0, "total": 0}
 
 
 @app.route("/")
 def serve_frontend():
-    return send_from_directory("../frontend", "index.html")
+    return send_from_directory(frontend_path, "index.html")
 
 
 @app.route("/history")
 def serve_data_page():
-    return send_from_directory("../frontend", "history.html")
+    return send_from_directory(frontend_path, "history.html")
 
 
 @app.route("/dataviz")
 def serve_dataviz_page():
-    return send_from_directory("../frontend", "dataviz.html")
+    return send_from_directory(frontend_path, "dataviz.html")
 
 
 @app.route("/admin")
 def serve_admin_page():
-    return send_from_directory("../frontend", "admin.html")
+    return send_from_directory(frontend_path, "admin.html")
 
 
 @app.route("/<path:path>")
 def serve_static(path):
-    return send_from_directory("../frontend", path)
+    return send_from_directory(frontend_path, path)
 
 
 @app.route("/upload", methods=["POST"])
@@ -74,7 +82,7 @@ def upload_file():
 
 @app.route("/data", methods=["GET"])
 def get_data():
-    conn = sqlite3.connect("../db/tracker.db")
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM transactions")
@@ -97,7 +105,7 @@ def get_agg_data():
 
     print(f"start_date: {start_date}, end_date: {end_date}, group_by: {group_by}")
 
-    conn = sqlite3.connect("../db/tracker.db")
+    conn = sqlite3.connect(db_path)
     df = pd.read_sql(
         """SELECT *
         FROM transactions
@@ -134,7 +142,7 @@ def get_agg_data():
 @app.route("/admin/delete-all", methods=["POST"])
 def delete_all_transactions():
     try:
-        conn = sqlite3.connect("../db/tracker.db")
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         cursor.execute("DELETE FROM transactions")
@@ -158,7 +166,7 @@ def edit_transaction(id):
         if not new_category:
             return jsonify({"error": "Category is required"}), 400
 
-        conn = sqlite3.connect("../db/tracker.db")
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         cursor.execute(
@@ -185,7 +193,7 @@ def edit_transaction(id):
 @app.route("/admin/delete/<int:id>", methods=["DELETE"])
 def delete_transaction(id):
     try:
-        conn = sqlite3.connect("../db/tracker.db")
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         cursor.execute("DELETE FROM transactions WHERE id = ?", (id,))
@@ -202,7 +210,7 @@ def delete_transaction(id):
 def categorize_transactions():
     global progress
     try:
-        conn = sqlite3.connect("../db/tracker.db")
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
         cursor.execute(
@@ -213,27 +221,19 @@ def categorize_transactions():
         progress["total"] = len(transactions)
         progress["current"] = 0
 
-        for transaction in transactions:
-            transaction_id, description = transaction
-            response = ollama.chat(
-                model="mistral",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Categorize the following transaction description into a category. Respond ONLY with a SINGLE category from the following list: Alimentação, Transporte, Lazer, Compra, Salário, Transferência, Investimento, Saque, Depósito. If none of these fit, respond with 'Outro'. No additional explanation or information is needed.",
-                    },
-                    {"role": "user", "content": description},
-                ],
+        if not transactions:
+            return jsonify({"message": "No transactions to categorize."})
+
+        descriptions = [t[1] for t in transactions]
+        predicted_categories = pipeline.predict(descriptions)
+
+        for (transaction_id, _), category in zip(transactions, predicted_categories):
+            cursor.execute(
+                "UPDATE transactions SET category = ? WHERE id = ?",
+                (category, transaction_id),
             )
-
-            category = response.message.content.strip()
-            if category:
-                cursor.execute(
-                    "UPDATE transactions SET category = ? WHERE id = ?",
-                    (category.split(" ")[0], transaction_id),
-                )
-
             progress["current"] += 1
+
             if progress["current"] % 10 == 0:
                 conn.commit()
 
@@ -251,7 +251,7 @@ def get_progress():
 
 
 def write_transactions_to_db(df: pd.DataFrame) -> None:
-    conn = sqlite3.connect("../db/tracker.db")
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
     for _, row in df.iterrows():
