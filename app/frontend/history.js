@@ -1,5 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const colNames = ["date", "description", "category", "id", "value"];
+    const colNames = [
+        "date",
+        "description",
+        "source",
+        "category",
+        "id",
+        "value",
+    ];
     const orderMap = colNames.reduce((acc, key, index) => {
         acc[key] = index;
         return acc;

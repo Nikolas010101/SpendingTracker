@@ -15,7 +15,7 @@ model_path = base_dir / "transaction_classifier.pkl"
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 df = pd.read_sql(
-    "SELECT * FROM transactions",
+    "SELECT * FROM transactions WHERE category IS NOT NULL",
     conn,
     dtype={"description": "string", "category": "string"},
 )

@@ -1,5 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const colNames = ["date", "description", "category", "id", "value"];
+    const colNames = [
+        "date",
+        "description",
+        "source",
+        "category",
+        "id",
+        "value",
+    ];
     const orderMap = colNames.reduce((acc, key, index) => {
         acc[key] = index;
         return acc;
@@ -119,7 +126,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         filteredData = data;
                     }
                     renderTable(currentPage);
-                    renderPagination();
                 })
                 .catch((error) => {
                     console.error("Error updating row:", error);
@@ -249,7 +255,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 fetch("/categorize-progress")
                     .then((progressResponse) => progressResponse.json())
                     .then((progressData) => {
-                        if (progressData.total === 0) return;
+                        if (progressData.total === 0) {
+                            clearInterval(progressInterval);
+                            return;
+                        }
 
                         document.getElementById(
                             "loadingBarContainer"

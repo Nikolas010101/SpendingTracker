@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     date DATE NOT NULL,
     description TEXT NOT NULL,
     category TEXT,
+    source TEXT NOT NULL,
     value NUMERIC(10, 2) NOT NULL
 )
 ''')

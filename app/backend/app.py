@@ -61,18 +61,7 @@ def upload_file():
     file.save(file_path)
 
     try:
-        df = (
-            pd.read_excel(
-                file_path,
-                skiprows=8,
-                dtype={"valor (R$)": "string", "lançamento": "string"},
-            )
-            .dropna(axis=0, subset=["valor (R$)"])
-            .drop(axis=1, labels=["ag./origem", "saldos (R$)"])
-        )
-        df.columns = ["date", "description", "value"]
-        df["date"] = pd.to_datetime(df["date"], format="%d/%m/%Y").dt.date
-
+        df = parse_statement_file(file_path)
         write_transactions_to_db(df)
 
         return jsonify({"message": "Data recorded successfully", "num_rows": len(df)})
@@ -103,8 +92,6 @@ def get_agg_data():
     group_by = request.args.get("group_by")
     transaction_type = request.args.get("transaction_type")
 
-    print(f"start_date: {start_date}, end_date: {end_date}, group_by: {group_by}")
-
     conn = sqlite3.connect(db_path)
     df = pd.read_sql(
         """SELECT *
@@ -112,7 +99,7 @@ def get_agg_data():
         WHERE date BETWEEN ? AND ?""",
         conn,
         params=[start_date, end_date],
-        dtype={"description": "string", "category": "string"},
+        dtype={"description": "string", "category": "string", "source": "string"},
     )
     df["date"] = pd.to_datetime(df["date"])
     if transaction_type != "both":
@@ -181,7 +168,7 @@ def edit_transaction(id):
         conn.close()
 
         if updated_row:
-            columns = ["id", "date", "description", "category", "value"]
+            columns = ["id", "date", "description", "category", "value", "source"]
             updated_row_dict = dict(zip(columns, updated_row))
             return jsonify(updated_row_dict)
         else:
@@ -257,14 +244,41 @@ def write_transactions_to_db(df: pd.DataFrame) -> None:
     for _, row in df.iterrows():
         cursor.execute(
             """
-            INSERT INTO transactions (date, description, value)
-            VALUES (?, ?, ?)
+            INSERT INTO transactions (date, description, source, value)
+            VALUES (?, ?, ?, ?)
         """,
-            (row["date"], row["description"], row["value"]),
+            (row["date"], row["description"], row["source"], row["value"]),
         )
 
     conn.commit()
     conn.close()
+
+
+def parse_statement_file(file_path: str) -> pd.DataFrame:
+    df = pd.read_excel(file_path)
+    if len(df.columns) == 5:
+        df = (
+            pd.read_excel(
+                file_path,
+                skiprows=8,
+                dtype={"valor (R$)": "string", "lançamento": "string"},
+            )
+            .dropna(axis=0, subset=["valor (R$)"])
+            .drop(axis=1, labels=["ag./origem", "saldos (R$)"])
+        )
+        df.columns = ["date", "description", "value"]
+        df["date"] = pd.to_datetime(df["date"], format="%d/%m/%Y").dt.date
+        df["source"] = "Conta corrente"
+    else:
+        df = pd.read_excel(
+            file_path, skiprows=24, dtype={"lançamento": "string"}, usecols=[0, 1, 3]
+        )
+        df.columns = ["date", "description", "value"]
+        df["value"] = pd.to_numeric(df["value"], errors="coerce")
+        df = df.dropna(subset=["value", "description"])
+        df["date"] = pd.to_datetime(df["date"], format="%d/%m/%Y").dt.date
+        df["source"] = "Cartão de crédito"
+    return df
 
 
 if __name__ == "__main__":
