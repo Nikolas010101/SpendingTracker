@@ -25,12 +25,49 @@
                 <option value="year">Year</option>
             </select>
 
-            <label for="transactionType">Transaction Type:</label>
-            <select id="transactionType">
-                <option value="both">Both</option>
-                <option value="credit">Credits</option>
-                <option value="debit">Debits</option>
-            </select>
+            <div class="checkbox-group">
+                <label>Transaction Type:</label>
+                <label
+                    ><input
+                        type="checkbox"
+                        name="transactionType"
+                        value="credit"
+                        checked
+                    />
+                    Credits</label
+                >
+                <label
+                    ><input
+                        type="checkbox"
+                        name="transactionType"
+                        value="debit"
+                        checked
+                    />
+                    Debits</label
+                >
+            </div>
+
+            <div class="checkbox-group">
+                <label>Transaction Source:</label>
+                <label
+                    ><input
+                        type="checkbox"
+                        name="transactionSource"
+                        value="Cartão de crédito"
+                        checked
+                    />
+                    Credit Card</label
+                >
+                <label
+                    ><input
+                        type="checkbox"
+                        name="transactionSource"
+                        value="Conta corrente"
+                        checked
+                    />
+                    Current Account</label
+                >
+            </div>
 
             <button id="refreshButton">Refresh</button>
         </div>
@@ -49,7 +86,7 @@
             <a href="/history">View Data</a>
             <a href="/admin">Admin</a>
         </div>
-    </body>
 
-    <script src="/dataviz.js"></script>
+        <script src="/dataviz.js"></script>
+    </body>
 </html>

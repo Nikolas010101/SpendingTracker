@@ -2,23 +2,51 @@ document.getElementById("refreshButton").addEventListener("click", function () {
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
     const groupBy = document.getElementById("groupBy").value;
-    const transactionType = document.getElementById("transactionType").value;
+
+    const transactionTypeCheckboxes = document.querySelectorAll(
+        'input[name="transactionType"]:checked'
+    );
+    const transactionTypes = Array.from(transactionTypeCheckboxes).map(
+        (cb) => cb.value
+    );
+
+    const transactionSourceCheckboxes = document.querySelectorAll(
+        'input[name="transactionSource"]:checked'
+    );
+    const transactionSources = Array.from(transactionSourceCheckboxes).map(
+        (cb) => cb.value
+    );
 
     if (!startDate || !endDate) {
         alert("Please select both start and end dates.");
         return;
     }
 
-    fetchData(startDate, endDate, groupBy, transactionType);
+    fetchData(
+        startDate,
+        endDate,
+        groupBy,
+        transactionTypes,
+        transactionSources
+    );
 });
 
-function fetchData(startDate, endDate, groupBy, transactionType) {
+function fetchData(
+    startDate,
+    endDate,
+    groupBy,
+    transactionTypes,
+    transactionSources
+) {
     const url = new URL("/agg_data", window.location.origin);
     const params = new URLSearchParams();
     params.append("start_date", startDate);
     params.append("end_date", endDate);
     params.append("group_by", groupBy);
-    params.append("transaction_type", transactionType);
+    transactionTypes.forEach((type) => params.append("transaction_type", type));
+    transactionSources.forEach((source) =>
+        params.append("transaction_source", source)
+    );
     url.search = params;
 
     fetch(url)

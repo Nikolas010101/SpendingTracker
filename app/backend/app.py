@@ -74,7 +74,7 @@ def get_data():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM transactions")
+    cursor.execute("SELECT * FROM transactions ORDER BY date DESC")
     rows = cursor.fetchall()
 
     columns = [description[0] for description in cursor.description]
@@ -90,7 +90,8 @@ def get_agg_data():
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
     group_by = request.args.get("group_by")
-    transaction_type = request.args.get("transaction_type")
+    transaction_types = request.args.getlist("transaction_type")
+    transaction_sources = request.args.getlist("transaction_source")
 
     conn = sqlite3.connect(db_path)
     df = pd.read_sql(
@@ -102,10 +103,16 @@ def get_agg_data():
         dtype={"description": "string", "category": "string", "source": "string"},
     )
     df["date"] = pd.to_datetime(df["date"])
-    if transaction_type != "both":
-        df = (
-            df[df["value"] > 0] if transaction_type == "credit" else df[df["value"] < 0]
-        )
+
+    if "credit" in transaction_types and "debit" not in transaction_types:
+        df = df[df["value"] > 0]
+    elif "debit" in transaction_types and "credit" not in transaction_types:
+        df = df[df["value"] < 0]
+
+    if transaction_sources:
+        df = df[df["source"].isin(transaction_sources)]
+
+    # Group data
     match group_by:
         case "day":
             df_grouped = df.groupby(["category", "date"])

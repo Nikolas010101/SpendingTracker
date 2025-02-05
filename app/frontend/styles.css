@@ -150,3 +150,31 @@ input[type="file"] {
     width: 50%;
     height: 500px;
 }
+
+/* Checkbox Group Styling */
+.checkbox-group {
+    margin: 10px 0;
+}
+
+.checkbox-group label {
+    display: block;
+    margin: 5px 0;
+    font-weight: normal;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 10px;
+}
+
+/* Checkbox Label Styling */
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
