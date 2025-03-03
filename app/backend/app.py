@@ -17,6 +17,7 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 base_dir = Path(__file__).resolve().parent
 db_path = base_dir.parents[0] / "db" / "tracker.db"
 frontend_path = base_dir.parents[0] / "frontend"
+spreadsheet_path = base_dir.parents[0] / "db" / "spreadsheet.xlsx"
 model_path = base_dir / "transaction_classifier.pkl"
 
 pipeline = joblib.load(model_path)
@@ -63,7 +64,7 @@ def upload_file():
     try:
         df = parse_statement_file(file_path)
         write_transactions_to_db(df)
-
+        save_db_to_spreadhseet(db_path, spreadsheet_path)
         return jsonify({"message": "Data recorded successfully", "num_rows": len(df)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -74,7 +75,7 @@ def get_data():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM transactions ORDER BY date DESC")
+    cursor.execute("SELECT * FROM transactions ORDER BY date DESC, id DESC")
     rows = cursor.fetchall()
 
     columns = [description[0] for description in cursor.description]
@@ -177,6 +178,7 @@ def edit_transaction(id):
         if updated_row:
             columns = ["id", "date", "description", "category", "value", "source"]
             updated_row_dict = dict(zip(columns, updated_row))
+            save_db_to_spreadhseet(db_path, spreadsheet_path)
             return jsonify(updated_row_dict)
         else:
             return jsonify({"error": "Transaction not found"}), 404
@@ -262,7 +264,8 @@ def write_transactions_to_db(df: pd.DataFrame) -> None:
 
 
 def parse_statement_file(file_path: str) -> pd.DataFrame:
-    df = pd.read_excel(file_path)
+    df = pd.read_excel(file_path, header=None)
+
     if len(df.columns) == 5:
         df = (
             pd.read_excel(
@@ -277,15 +280,30 @@ def parse_statement_file(file_path: str) -> pd.DataFrame:
         df["date"] = pd.to_datetime(df["date"], format="%d/%m/%Y").dt.date
         df["source"] = "Conta corrente"
     else:
+        skip_rows = df[df[0].astype(str).str.lower() == "data"].index[0] - 1
+
         df = pd.read_excel(
-            file_path, skiprows=24, dtype={"lançamento": "string"}, usecols=[0, 1, 3]
+            file_path,
+            skiprows=skip_rows,
+            dtype={"lançamento": "string"},
+            usecols=[0, 1, 3],
         )
         df.columns = ["date", "description", "value"]
-        df["value"] = pd.to_numeric(df["value"], errors="coerce")
+        df["value"] = -pd.to_numeric(df["value"], errors="coerce")
         df = df.dropna(subset=["value", "description"])
         df["date"] = pd.to_datetime(df["date"], format="%d/%m/%Y").dt.date
         df["source"] = "Cartão de crédito"
     return df
+
+
+def save_db_to_spreadhseet(db_path: str, spreadsheet_path: str) -> None:
+    conn = sqlite3.connect(db_path)
+
+    df = pd.read_sql("SELECT * FROM transactions", conn)
+    df.to_excel(spreadsheet_path, index=False)
+
+    conn.commit()
+    conn.close()
 
 
 if __name__ == "__main__":
